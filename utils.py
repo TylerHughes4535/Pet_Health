@@ -19,3 +19,4 @@ def plot_anomalies(df, column='body_temp'):
     plt.tight_layout()
     plt.title(f"{column} with Anomalies")
     plt.show()
+
