@@ -1,3 +1,10 @@
+
+//Use the following command to build and upload the firmware:
+// pio run
+// pio run --target upload
+// Use the following command to monitor the serial output:
+// pio device monitor
+
 #include <ArduinoBLE.h>
 #include <Arduino_HS300x.h>
 #include <Arduino_BMI270_BMM150.h>
