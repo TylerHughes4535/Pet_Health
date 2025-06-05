@@ -1,0 +1,39 @@
+# ─── Byte‐code/Cache (Python, Jupyter) ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# ─── Virtual environment folders ───────────────────────────────────────────────────
+env/
+venv/
+.venv/
+
+# ─── Data and model artifacts (adjust if you want to track some files) ────────────
+# Ignore all CSV and pickle files in data/ and data/results/ unless you explicitly remove these lines
+data/*.csv
+data/*.pkl
+data/results/*.csv
+data/results/*.pkl
+
+# Ignore model pickles
+model/*.pkl
+
+# ─── Firmware build artifacts (PlatformIO) ────────────────────────────────────────
+# The firmware subfolder will have its own .gitignore for .pio/, but we can be safe here:
+firmware/.pio/
+firmware/.pioenvs/
+
+# ─── Firmware VS Code settings (if any) ──────────────────────────────────────────
+firmware/.vscode/
+
+# ─── Top‐level VS Code settings ───────────────────────────────────────────────────
+.vscode/
+
+# ─── OS‐specific / editor files ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Logs and temporary files ─────────────────────────────────────────────────────
+*.log
+*.tmp
+*.swp
