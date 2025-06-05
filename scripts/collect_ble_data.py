@@ -11,10 +11,11 @@ from pathlib import Path
 from bleak import BleakScanner, BleakClient
 import pytz
 
-TEMP_UUID   = "2A6E"
-HUM_UUID    = "2A6F"
-IMU_UUID    = "A001"
-DEVICE_NAME = "NanoSense"
+# UUIDs for your BLE characteristics
+TEMP_UUID    = "2A6E"
+HUM_UUID     = "2A6F"
+IMU_UUID     = "A001"
+DEVICE_NAME  = "NanoSense"
 
 def decode_temp(data):
     return struct.unpack("<h", data)[0] / 100.0
@@ -26,22 +27,22 @@ def decode_imu(data):
     return struct.unpack("<fff", data)
 
 async def main(outfile_name, duration_sec):
-    # 1. Determine project root and data folder
+    # 1) Determine project root and data folder
     project_root = Path(__file__).resolve().parent.parent
     data_dir     = project_root / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     out_path     = data_dir / outfile_name
 
-    # 2. Find BLE device
+    # 2) Scan for the BLE device
     print("Scanning for device...")
     device = await BleakScanner.find_device_by_name(DEVICE_NAME, timeout=10.0)
     if not device:
-        print("Device not found.")
+        print("Device not found. Exiting.")
         return
 
-    # 3. Connect and open CSV
+    # 3) Connect and start writing CSV
     async with BleakClient(device) as client:
-        await asyncio.sleep(2)
+        await asyncio.sleep(2)  # let BLE connection settle
         print(f"Connected. Recording for {duration_sec} seconds...")
 
         start_time = time.time()
@@ -49,7 +50,6 @@ async def main(outfile_name, duration_sec):
             writer = csv.writer(f)
             writer.writerow(["timestamp", "temp_C", "humidity_%", "accel_x", "accel_y", "accel_z"])
 
-            # 4. Loop until duration expires
             while True:
                 elapsed = time.time() - start_time
                 if elapsed >= duration_sec:
@@ -65,6 +65,7 @@ async def main(outfile_name, duration_sec):
                     h = decode_humidity(raw_h)
                     x, y, z = decode_imu(raw_imu)
 
+                    # Timestamp in US/Eastern
                     est = pytz.timezone("US/Eastern")
                     now = datetime.now(est).isoformat()
 
@@ -81,7 +82,7 @@ async def main(outfile_name, duration_sec):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python collect_ble_data.py <output.csv> <duration_seconds>")
+        print("Usage: python collect_ble_data.py <output_filename.csv> <duration_seconds>")
     else:
         _, out_name, dur = sys.argv
         asyncio.run(main(out_name, int(dur)))
