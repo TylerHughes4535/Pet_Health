@@ -15,9 +15,13 @@ import pytz
 TEMP_UUID    = "2A6E"
 HUM_UUID     = "2A6F"
 IMU_UUID     = "A001"
+EX_TEMP_UUID = "A002"
 DEVICE_NAME  = "NanoSense"
 
 def decode_temp(data):
+    return struct.unpack("<h", data)[0] / 100.0
+
+def decode_ex_temp(data):
     return struct.unpack("<h", data)[0] / 100.0
 
 def decode_humidity(data):
@@ -48,7 +52,7 @@ async def main(outfile_name, duration_sec):
         start_time = time.time()
         with open(out_path, mode="w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["timestamp", "temp_C", "humidity_%", "accel_x", "accel_y", "accel_z"])
+            writer.writerow(["timestamp", "temp_C", "ex_temp_C", "humidity_%", "accel_x", "accel_y", "accel_z"])
 
             while True:
                 elapsed = time.time() - start_time
@@ -58,9 +62,11 @@ async def main(outfile_name, duration_sec):
 
                 try:
                     raw_t   = await client.read_gatt_char(TEMP_UUID)
+                    raw_ex_t = await client.read_gatt_char(EX_TEMP_UUID)
                     raw_h   = await client.read_gatt_char(HUM_UUID)
                     raw_imu = await client.read_gatt_char(IMU_UUID)
 
+                    ex_t = decode_ex_temp(raw_ex_t)
                     t = decode_temp(raw_t)
                     h = decode_humidity(raw_h)
                     x, y, z = decode_imu(raw_imu)
@@ -69,9 +75,9 @@ async def main(outfile_name, duration_sec):
                     est = pytz.timezone("US/Eastern")
                     now = datetime.now(est).isoformat()
 
-                    writer.writerow([now, t, h, x, y, z])
+                    writer.writerow([now, t, ex_t, h, x, y, z])
                     f.flush()
-                    print(f"{now}  Temp: {t:.2f}  Humidity: {h:.2f}  IMU: {x:.2f}, {y:.2f}, {z:.2f}")
+                    print(f"{now}  Temp: {t:.2f} ex_Temp: {ex_t:.2f} Humidity: {h:.2f}  IMU: {x:.2f}, {y:.2f}, {z:.2f}")
 
                     await asyncio.sleep(1)
                 except Exception as e:

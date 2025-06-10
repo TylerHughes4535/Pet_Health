@@ -14,6 +14,7 @@ from bleak import BleakScanner, BleakClient
 import pytz
 
 TEMP_UUID   = "2A6E"
+EX_TEMP_UUID = "A002"  
 HUM_UUID    = "2A6F"
 IMU_UUID    = "A001"
 DEVICE_NAME = "NanoSense"
@@ -27,6 +28,9 @@ def decode_humidity(data):
 
 def decode_imu(data):
     return struct.unpack("<fff", data)
+
+def decode_ex_temp(data):
+    return struct.unpack("<h", data)[0] / 100.0
 
 async def main():
     # 1) Load scaler, model, and threshold
@@ -50,7 +54,7 @@ async def main():
     writer = csv.writer(f)
     # Write header with raw + accel_mag + anomaly_flag
     header = [
-        "timestamp", "temp_C", "humidity_%", "accel_x", "accel_y", "accel_z",
+        "timestamp", "temp_C", "ex_temp_C", "humidity_%", "accel_x", "accel_y", "accel_z",
         "accel_mag", "anomaly"
     ]
     writer.writerow(header)
@@ -84,10 +88,12 @@ async def main():
         while not stop_event.is_set():
             try:
                 raw_t   = await client.read_gatt_char(TEMP_UUID)
+                raw_ex_t = await client.read_gatt_char(EX_TEMP_UUID)
                 raw_h   = await client.read_gatt_char(HUM_UUID)
                 raw_imu = await client.read_gatt_char(IMU_UUID)
 
                 t = decode_temp(raw_t)
+                ex_t = decode_ex_temp(raw_ex_t)
                 h = decode_humidity(raw_h)
                 x, y, z = decode_imu(raw_imu)
 
@@ -99,7 +105,7 @@ async def main():
                 accel_mag = np.sqrt(x**2 + y**2 + z**2)
 
                 # Scale and score
-                feats = np.array([[t, h, x, y, z, accel_mag]])
+                feats = np.array([[t, ex_t, h, x, y, z, accel_mag]])
                 X_scaled = scaler.transform(feats)
                 score = iso.decision_function(X_scaled)[0]  # higher = more normal
                 anomaly = 1 if score < threshold else 0   # 1=anomaly, 0=normal
@@ -109,7 +115,7 @@ async def main():
                     print(f"[{now}]  ANOMALY DETECTED  (score={score:.3f} < {threshold:.3f})")
 
                 # Write one row: timestamp, raw features, accel_mag, anomaly flag
-                writer.writerow([now, t, h, x, y, z, accel_mag, anomaly])
+                writer.writerow([now, t, ex_t, h, x, y, z, accel_mag, anomaly])
                 f.flush()
 
                 await asyncio.sleep(1)

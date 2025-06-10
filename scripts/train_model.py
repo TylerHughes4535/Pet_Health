@@ -34,7 +34,7 @@ baseline_df["accel_mag"] = np.sqrt(
 #    b) (Optional) More features, e.g. rolling stats. Can be added here.
 
 # 3) Select features for training
-features = ["temp_C", "humidity_%", "accel_x", "accel_y", "accel_z", "accel_mag"]
+features = ["temp_C", "ex_temp_C", "humidity_%", "accel_x", "accel_y", "accel_z", "accel_mag"]
 X_baseline = baseline_df[features].values
 
 # 4) Scale features

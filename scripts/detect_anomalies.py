@@ -29,7 +29,7 @@ baseline_path = os.path.join(base_dir, "data", "baseline.csv")
 baseline_df   = load_and_convert(baseline_path)
 
 # List of raw features (exactly as you collected them)
-feature_list = ["temp_C", "humidity_%", "accel_x", "accel_y", "accel_z"]
+feature_list = ["temp_C", "ex_temp_C", "humidity_%", "accel_x", "accel_y", "accel_z"]
 baseline_stats = {}
 for f in feature_list:
     mu    = baseline_df[f].mean()
@@ -63,7 +63,7 @@ df["accel_mag"] = np.sqrt(
 )
 
 # Build the array of features in the exact order used in training
-features_for_model = ["temp_C", "humidity_%", "accel_x", "accel_y", "accel_z", "accel_mag"]
+features_for_model = ["temp_C", "ex_temp_C", "humidity_%", "accel_x", "accel_y", "accel_z", "accel_mag"]
 X = df[features_for_model].values
 
 # -------------- SCALE & SCORE --------------

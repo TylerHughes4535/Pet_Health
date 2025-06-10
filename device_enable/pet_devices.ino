@@ -1,11 +1,14 @@
 #include <ArduinoBLE.h>
 #include <Arduino_HS300x.h>
 #include <Arduino_BMI270_BMM150.h>
+#include <Wire.h>
+#include <SparkFunTMP117.h>
 
 // BLE Service and Characteristics
 BLEService sensorService("181A");  // Environmental Sensing Service
 
 BLECharacteristic tempCharacteristic("2A6E", BLERead | BLENotify, 2);      // Temperature (int16_t, °C × 100)
+BLECharacteristic externalTempCharacteristic("A002", BLERead | BLENotify, 2); // External Temperature (int16_t, °C × 100)
 BLECharacteristic humCharacteristic("2A6F", BLERead | BLENotify, 2);       // Humidity (int16_t, % × 100)
 BLECharacteristic imuCharacteristic("A001", BLERead | BLENotify, 12);      // IMU Accel (3 × float = 12 bytes)
 
@@ -28,6 +31,11 @@ void setup() {
     while (1);
   }
 
+  if (!TMP117.begin()){
+    Serial.println("Failed to initialize TMP117!");
+    while (1);
+  }
+
   Serial.println("Sensors initialized.");
 
   if (!BLE.begin()) {
@@ -41,6 +49,7 @@ void setup() {
   sensorService.addCharacteristic(tempCharacteristic);
   sensorService.addCharacteristic(humCharacteristic);
   sensorService.addCharacteristic(imuCharacteristic);
+  sensorService.addCharacteristic(externalTempCharacteristic)
   BLE.addService(sensorService);
 
   BLE.advertise();
@@ -69,14 +78,20 @@ void loop() {
 void sendSensorData() {
   float temperature = HS300x.readTemperature();
   float humidity = HS300x.readHumidity();
+  float ex_temp = TMP117.readTemperature();
   int16_t tempFixed = (int16_t)(temperature * 100);
   int16_t humFixed = (int16_t)(humidity * 100);
+  int16_t ex_tempFixed = (int16_t)(ex_temp * 100);
 
   tempCharacteristic.writeValue((byte*)&tempFixed, 2);
   humCharacteristic.writeValue((byte*)&humFixed, 2);
+  ex_tempCharacteristic.writeValue((byte*)&ex_tempFixed, 2);
+
+  
 
   Serial.print("Temperature: "); Serial.print(temperature); Serial.println(" °C");
   Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" %");
+  Serial.print("External Temperature: "); Serial.print(ex_temp); Serial.println(" °C");
 
   float x, y, z;
   if (IMU.accelerationAvailable()) {
